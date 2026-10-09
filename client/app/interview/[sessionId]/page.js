@@ -29,6 +29,8 @@ export default function InterviewPage() {
   const transcriptRef = useRef([]);
   const timerRef = useRef(null);
   const transcriptEndRef = useRef(null);
+  const callPhaseRef = useRef('idle'); // idle | live | ended
+  const mountedRef = useRef(true);
 
   // Auto-scroll transcript
   useEffect(() => {
@@ -63,11 +65,11 @@ export default function InterviewPage() {
 
   // Cleanup on unmount
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (vapiRef.current) {
-        try { vapiRef.current.stop(); } catch (e) { /* ignore */ }
-      }
+      mountedRef.current = false;
+      clearInterval(timerRef.current);
+      try { vapiRef.current?.stop(); } catch { /* ignore */ }
     };
   }, []);
 
@@ -104,26 +106,20 @@ export default function InterviewPage() {
 
       // Event handlers
       vapi.on('call-start', () => {
+        callPhaseRef.current = 'live';
         setCallState('live');
-        // Start elapsed timer
-        timerRef.current = setInterval(() => {
-          setElapsedTime((prev) => prev + 1);
-        }, 1000);
+        timerRef.current = setInterval(() => setElapsedTime((prev) => prev + 1), 1000);
       });
 
+      // Fires once per call — also when the user navigates away mid-call, so the transcript is still saved.
       vapi.on('call-end', async () => {
-        if (timerRef.current) clearInterval(timerRef.current);
+        if (callPhaseRef.current !== 'live') return;
+        callPhaseRef.current = 'ended';
+        clearInterval(timerRef.current);
         setCallState('ending');
-
-        try {
-          const data = await post(`/api/sessions/${sessionId}/end`, {
-            transcript: transcriptRef.current,
-          });
-          router.push(`/interview/${sessionId}/report`);
-        } catch (err) {
-          setError('Failed to save interview: ' + err.message);
-          setCallState('error');
-        }
+        // If feedback generation fails, the report page offers a retry.
+        await post(`/api/sessions/${sessionId}/end`, { transcript: transcriptRef.current }).catch(() => {});
+        if (mountedRef.current) router.push(`/interview/${sessionId}/report`);
       });
 
       vapi.on('speech-start', () => {
@@ -137,22 +133,15 @@ export default function InterviewPage() {
       vapi.on('message', (message) => {
         if (message.type === 'transcript' && message.transcriptType === 'final') {
           setTranscript((prev) => {
-            const newTranscript = [...prev];
-            const last = newTranscript[newTranscript.length - 1];
-            const newText = message.transcript.trim();
-            
-            if (last && last.role === message.role) {
-              // If same speaker, append to the same block (avoiding exact duplicates)
-              if (!last.content.includes(newText)) {
-                last.content = last.content + (last.content ? ' ' : '') + newText;
-              }
-            } else {
-              // New speaker, new block
-              newTranscript.push({ role: message.role, content: newText });
-            }
-            
-            transcriptRef.current = newTranscript;
-            return newTranscript;
+            const last = prev[prev.length - 1];
+            const text = message.transcript.trim();
+            if (last?.content.endsWith(text)) return prev; // Vapi occasionally repeats a final transcript
+            // Same speaker continues the same block; a new speaker starts a new one.
+            const next = last?.role === message.role
+              ? [...prev.slice(0, -1), { ...last, content: `${last.content} ${text}` }]
+              : [...prev, { role: message.role, content: text }];
+            transcriptRef.current = next;
+            return next;
           });
         }
       });
@@ -164,16 +153,9 @@ export default function InterviewPage() {
         if (timerRef.current) clearInterval(timerRef.current);
       });
 
-      // Start the call with the transient assistant config
-      await vapi.start(config);
-
-      // Store call ID (if available from the start response)
-      try {
-        // The call ID might be available after start resolves
-        // We'll patch it when available
-      } catch (patchErr) {
-        // Non-critical, continue
-      }
+      const call = await vapi.start(config);
+      // Lets the server fetch the transcript from Vapi if the browser didn't capture it.
+      if (call?.id) patch(`/api/sessions/${sessionId}`, { vapiCallId: call.id }).catch(() => {});
     } catch (err) {
       setError('Failed to start interview: ' + err.message);
       setCallState('error');

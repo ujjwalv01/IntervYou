@@ -30,3 +30,12 @@ CREATE TABLE IF NOT EXISTS feedback_reports (
   summary TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- One report per session. Older versions could insert duplicates, so keep only the newest first.
+DELETE FROM feedback_reports a USING feedback_reports b WHERE a.session_id = b.session_id AND a.id < b.id;
+CREATE UNIQUE INDEX IF NOT EXISTS feedback_reports_session_id_key ON feedback_reports (session_id);
+
+-- Emails are matched case-insensitively.
+CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_key ON users (LOWER(email));
+
+CREATE INDEX IF NOT EXISTS interview_sessions_user_id_idx ON interview_sessions (user_id, started_at DESC);

@@ -12,11 +12,11 @@ Next.js Client (App Router) ←→ Express API ←→ Postgres (Neon)
   Groq (live conversation via Vapi)
 ```
 
-- **Frontend**: Next.js 15, JavaScript, Tailwind CSS v4 - dark-mode glassmorphism UI
+- **Frontend**: Next.js 16, JavaScript, Tailwind CSS v4 - dark-mode glassmorphism UI
 - **Backend**: Node.js + Express - REST API with JWT authentication
 - **Database**: PostgreSQL on Neon (serverless) - users, sessions, feedback reports
 - **Voice AI**: Vapi manages the full voice pipeline (STT → LLM → TTS) via browser WebRTC. The assistant is built as a "transient assistant" per session , no dashboard config needed.
-- **LLM**: Groq (`llama-3.3-70b-versatile`) — powers both the live conversational interview (via Vapi) and the post-interview feedback generation (direct API call).
+- **LLM**: Groq (`openai/gpt-oss-120b` by default, override with `GROQ_MODEL`) — powers both the live conversational interview (via Vapi) and the post-interview feedback generation (direct API call).
 
 ## Setup
 
@@ -55,8 +55,8 @@ Voice is handled by Vapi with Groq as the LLM. Realistic all-in cost is roughly 
 
 ## Known Limitations / Future Improvements
 
-- **Feedback generation is synchronous** — adds a few seconds of latency after the call ends. Would move to a background job with polling/websocket notification given more time.
+- **Feedback generation is synchronous** — adds a few seconds of latency after the call ends. If it fails, the report page offers a one-click retry from the saved transcript.
 - **No resume/job-description upload** — the system prompt uses the user's stated role and level, but doesn't incorporate a specific JD or resume for targeted questions.
-- **Vapi transcript fallback** — if the client-side transcript capture fails, we fall back to Vapi's REST API, but this path is less tested.
+- **Vapi transcript fallback** — if the client-side transcript capture fails, the server reads the transcript from Vapi using the saved call id.
 - **No admin panel** — no way for an evaluator to review interviews or override scores.
 - **Single user type** — no distinction between candidate and recruiter roles.

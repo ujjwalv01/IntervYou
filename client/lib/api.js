@@ -1,55 +1,36 @@
+import { getAuth, clearAuth } from './auth';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
-function getToken() {
-  if (typeof window === 'undefined') return null;
+async function request(method, endpoint, body) {
+  const token = getAuth()?.token;
+  let res;
   try {
-    const auth = localStorage.getItem('intervu_auth');
-    if (!auth) return null;
-    return JSON.parse(auth).token;
+    res = await fetch(`${API_URL}${endpoint}`, {
+      method,
+      headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }) },
+      body: body && JSON.stringify(body),
+    });
   } catch {
-    return null;
-  }
-}
-
-async function request(endpoint, options = {}) {
-  const token = getToken();
-  const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    throw new Error("Can't reach the server. Check your connection and try again.");
   }
 
-  const res = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  // Expired or invalid token: log out instead of leaving the user stuck on errors.
+  if (res.status === 401 && token) {
+    clearAuth();
+    window.location.href = '/login';
+  }
 
-  const data = await res.json();
-
+  const data = await res.json().catch(() => null);
   if (!res.ok) {
-    throw new Error(data.error || 'Something went wrong');
+    const err = new Error(data?.error || 'Something went wrong');
+    err.status = res.status;
+    throw err;
   }
-
   return data;
 }
 
-export function get(endpoint) {
-  return request(endpoint);
-}
-
-export function post(endpoint, body) {
-  return request(endpoint, {
-    method: 'POST',
-    body: JSON.stringify(body),
-  });
-}
-
-export function patch(endpoint, body) {
-  return request(endpoint, {
-    method: 'PATCH',
-    body: JSON.stringify(body),
-  });
-}
+export const get = (endpoint) => request('GET', endpoint);
+export const post = (endpoint, body) => request('POST', endpoint, body);
+export const patch = (endpoint, body) => request('PATCH', endpoint, body);
+export const del = (endpoint) => request('DELETE', endpoint);

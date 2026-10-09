@@ -95,8 +95,8 @@ function MiniGauge({ score, size = 48 }) {
 
 function ScoreTrendChart({ sessions }) {
   const completed = sessions
-    .filter((s) => s.status === 'completed' && s.overallScore != null)
-    .slice(-8)
+    .filter((s) => s.overallScore != null)
+    .slice(0, 8) // sessions arrive newest first: take the latest 8, then show them oldest → newest
     .reverse();
 
   if (completed.length < 2) {
@@ -374,14 +374,10 @@ export default function DashboardPage() {
 
   // Derived data
   const completedSessions = useMemo(() => sessions.filter((s) => s.status === 'completed'), [sessions]);
-  const avgScore = useMemo(() => {
-    if (completedSessions.length === 0) return null;
-    return Math.round(completedSessions.reduce((sum, s) => sum + (s.overallScore || 0), 0) / completedSessions.length);
-  }, [completedSessions]);
-  const bestScore = useMemo(() => {
-    if (completedSessions.length === 0) return null;
-    return Math.max(...completedSessions.map((s) => s.overallScore || 0));
-  }, [completedSessions]);
+  // Only sessions that actually have a report count towards scores.
+  const scores = sessions.map((s) => s.overallScore).filter((s) => s != null);
+  const avgScore = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+  const bestScore = scores.length ? Math.max(...scores) : null;
   const completionRate = sessions.length > 0 ? Math.round((completedSessions.length / sessions.length) * 100) : 0;
   const displaySessions = showAll ? sessions : sessions.slice(0, 5);
 

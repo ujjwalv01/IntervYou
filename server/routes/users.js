@@ -1,65 +1,28 @@
-const express = require('express');
-const pool = require('../db');
+const router = require('express').Router();
+const db = require('../db');
 const requireAuth = require('../middleware/requireAuth');
 
-const router = express.Router();
+router.use(requireAuth);
 
 // GET /api/users/me
-router.get('/me', requireAuth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT id, name, email, role, experience_level, created_at FROM users WHERE id = $1',
-      [req.userId]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const user = result.rows[0];
-    res.json({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      experienceLevel: user.experience_level,
-      createdAt: user.created_at,
-    });
-  } catch (err) {
-    console.error('Get user error:', err);
-    res.status(500).json({ error: 'Something went wrong' });
-  }
+router.get('/me', async (req, res) => {
+  const { rows } = await db.query(`SELECT ${db.USER_FIELDS} FROM users WHERE id = $1`, [req.userId]);
+  if (!rows[0]) return res.status(404).json({ error: 'User not found' });
+  res.json(rows[0]);
 });
 
-// PATCH /api/users/me
-router.patch('/me', requireAuth, async (req, res) => {
-  try {
-    const { role, experienceLevel } = req.body;
-
-    const result = await pool.query(
-      `UPDATE users SET role = COALESCE($1, role), experience_level = COALESCE($2, experience_level)
-       WHERE id = $3
-       RETURNING id, name, email, role, experience_level, created_at`,
-      [role, experienceLevel, req.userId]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const user = result.rows[0];
-    res.json({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      experienceLevel: user.experience_level,
-      createdAt: user.created_at,
-    });
-  } catch (err) {
-    console.error('Update user error:', err);
-    res.status(500).json({ error: 'Something went wrong' });
-  }
+// PATCH /api/users/me — any of name, role, experienceLevel; omitted fields are unchanged.
+router.patch('/me', async (req, res) => {
+  const clean = (value, max) => (typeof value === 'string' && value.trim() ? value.trim().slice(0, max) : null);
+  const { rows } = await db.query(
+    `UPDATE users
+     SET name = COALESCE($1, name), role = COALESCE($2, role), experience_level = COALESCE($3, experience_level)
+     WHERE id = $4
+     RETURNING ${db.USER_FIELDS}`,
+    [clean(req.body.name, 120), clean(req.body.role, 120), clean(req.body.experienceLevel, 40), req.userId]
+  );
+  if (!rows[0]) return res.status(404).json({ error: 'User not found' });
+  res.json(rows[0]);
 });
 
 module.exports = router;

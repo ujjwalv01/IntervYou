@@ -1,3 +1,6 @@
+// Groq retires models regularly — override with GROQ_MODEL instead of editing code.
+const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
+
 const TYPE_LABELS = {
   behavioral: 'Behavioral',
   technical: 'Technical',
@@ -54,42 +57,18 @@ function buildAssistantConfig({ session, user }) {
     vars
   );
 
-  return {
+  return {
     model: {
       provider: 'groq',
-      model: 'llama-3.3-70b-versatile',
+      model: GROQ_MODEL,
       temperature: 0.6,
-      messages: [
-        {
-          role: 'system',
-          content: systemPrompt,
-        },
-      ],
+      messages: [{ role: 'system', content: systemPrompt }],
+      tools: [{ type: 'endCall' }],
     },
-    voice: {
-      provider: 'vapi',
-      voiceId: 'Kai',
-    },
+    voice: { provider: 'vapi', voiceId: 'Savannah' },
     firstMessage,
     maxDurationSeconds: 1500,
-    endCallFunctionEnabled: true,
-    clientMessages: [
-      'transcript',
-      'hang',
-      'function-call',
-      'metadata',
-      'speech-update',
-      'conversation-update',
-    ],
-    serverMessages: [
-      'end-of-call-report',
-      'transcript',
-      'hang',
-      'function-call',
-      'speech-update',
-      'conversation-update',
-    ],
   };
 }
 
-module.exports = { buildAssistantConfig };
+module.exports = { buildAssistantConfig, TYPE_LABELS, GROQ_MODEL };

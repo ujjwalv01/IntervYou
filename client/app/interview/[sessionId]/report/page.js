@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { get } from '@/lib/api';
+import { get, post } from '@/lib/api';
 import { getAuth } from '@/lib/auth';
 
 const TYPE_LABELS = {
@@ -66,36 +66,52 @@ export default function ReportPage() {
   const sessionId = params.sessionId;
 
   const [report, setReport] = useState(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null); // { message, canRetry }
+  const [retrying, setRetrying] = useState(false);
   const [expandedQuestion, setExpandedQuestion] = useState(null);
 
+  const loadReport = useCallback(async () => {
+    try {
+      setReport(await get(`/api/sessions/${sessionId}/report`));
+      setError(null);
+    } catch (err) {
+      // 404 = the interview ended but feedback generation failed; it can be retried.
+      setError({ message: err.status === 404 ? "Your feedback report isn't ready yet." : err.message, canRetry: err.status === 404 });
+    }
+  }, [sessionId]);
+
+  const retry = async () => {
+    setRetrying(true);
+    try {
+      await post(`/api/sessions/${sessionId}/end`, {});
+      await loadReport();
+    } catch (err) {
+      setError({ message: err.message, canRetry: true });
+    } finally {
+      setRetrying(false);
+    }
+  };
+
   useEffect(() => {
-    const auth = getAuth();
-    if (!auth || !auth.token) {
-      router.replace('/login');
-      return;
-    }
-
-    async function loadReport() {
-      try {
-        const data = await get(`/api/sessions/${sessionId}/report`);
-        setReport(data);
-      } catch (err) {
-        setError(err.message);
-      }
-    }
-
+    if (!getAuth()?.token) return router.replace('/login');
     loadReport();
-  }, [sessionId, router]);
+  }, [router, loadReport]);
 
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="error-toast mb-4">{error}</div>
-          <button onClick={() => router.push('/dashboard')} className="btn-secondary">
-            Back to Dashboard
-          </button>
+          <div className="error-toast mb-4">{error.message}</div>
+          <div className="flex gap-3 justify-center">
+            {error.canRetry && (
+              <button onClick={retry} disabled={retrying} className="btn-primary">
+                {retrying ? 'Generating…' : 'Generate report'}
+              </button>
+            )}
+            <button onClick={() => router.push('/dashboard')} className="btn-secondary">
+              Back to Dashboard
+            </button>
+          </div>
         </div>
       </div>
     );

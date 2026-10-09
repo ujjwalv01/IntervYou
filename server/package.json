@@ -4,20 +4,19 @@
   "description": "Intervu Express API server",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon index.js",
+    "dev": "node --watch index.js",
     "start": "node index.js",
-    "migrate": "node -e \"require('dotenv').config(); const fs = require('fs'); const { Pool } = require('pg'); const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }); pool.query(fs.readFileSync('./schema.sql', 'utf8')).then(() => { console.log('Migration complete'); pool.end(); }).catch(e => { console.error('Migration failed:', e); pool.end(); process.exit(1); });\""
+    "migrate": "node migrate.js"
   },
   "dependencies": {
-    "bcrypt": "^5.1.1",
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
-    "express": "^4.21.2",
+    "express": "^5.3.0",
     "jsonwebtoken": "^9.0.2",
-    "node-fetch": "^2.7.0",
     "pg": "^8.13.1"
   },
-  "devDependencies": {
-    "nodemon": "^3.1.9"
+  "engines": {
+    "node": ">=20"
   }
 }
