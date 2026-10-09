@@ -1,9 +1,8 @@
 const router = require('express').Router();
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const db = require('../db');
+const { signToken } = require('../middleware/requireAuth');
 
-const signToken = (user) => jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 
 // POST /api/auth/signup
@@ -27,7 +26,7 @@ router.post('/signup', async (req, res) => {
       `INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING ${db.USER_FIELDS}`,
       [name, email, await bcrypt.hash(password, 10)]
     );
-    res.status(201).json({ token: signToken(rows[0]), user: rows[0] });
+    res.status(201).json({ token: signToken(rows[0].id, req.body.remember === true), user: rows[0] });
   } catch (err) {
     if (err.code === '23505') return res.status(409).json({ error: 'An account with this email already exists' });
     throw err;
@@ -45,11 +44,14 @@ router.post('/login', async (req, res) => {
     [email]
   );
   const { password_hash, ...user } = rows[0] || {};
+  if (rows[0] && !password_hash) {
+    return res.status(401).json({ error: 'This account uses Google or GitHub sign-in. Use that button instead.' });
+  }
   if (!rows[0] || !(await bcrypt.compare(password, password_hash))) {
     return res.status(401).json({ error: 'Invalid email or password' });
   }
 
-  res.json({ token: signToken(user), user });
+  res.json({ token: signToken(user.id, req.body.remember === true), user });
 });
 
 module.exports = router;

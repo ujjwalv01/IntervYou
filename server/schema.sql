@@ -39,3 +39,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS feedback_reports_session_id_key ON feedback_re
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_key ON users (LOWER(email));
 
 CREATE INDEX IF NOT EXISTS interview_sessions_user_id_idx ON interview_sessions (user_id, started_at DESC);
+
+-- Google / GitHub accounts have no password.
+ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;

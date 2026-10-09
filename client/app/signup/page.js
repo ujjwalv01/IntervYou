@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AuthShell from '@/components/AuthShell';
+import SocialSignIn from '@/components/SocialSignIn';
 import { post } from '@/lib/api';
 import { setAuth, useAuthRedirect } from '@/lib/auth';
 
@@ -17,6 +18,7 @@ export default function SignupPage() {
   useAuthRedirect('out');
   const router = useRouter();
   const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [remember, setRemember] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -25,7 +27,7 @@ export default function SignupPage() {
     setError('');
     setLoading(true);
     try {
-      setAuth(await post('/api/auth/signup', form));
+      setAuth(await post('/api/auth/signup', { ...form, remember }));
       router.push('/onboarding');
     } catch (err) {
       setError(err.message);
@@ -35,6 +37,7 @@ export default function SignupPage() {
 
   return (
     <AuthShell title="Create your account" subtitle="Free to use. Your first interview is two minutes away.">
+      <SocialSignIn remember={remember} />
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <div className="alert">{error}</div>}
         {FIELDS.map(({ name, label, ...props }) => (
@@ -44,6 +47,10 @@ export default function SignupPage() {
               value={form[name]} onChange={(e) => setForm({ ...form, [name]: e.target.value })} />
           </div>
         ))}
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-2">
+          <input type="checkbox" className="size-4 accent-sky" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+          Remember me for 30 days
+        </label>
         <button type="submit" disabled={loading} className="btn-primary w-full py-3">
           {loading && <span className="spinner size-4" />} Get started
         </button>

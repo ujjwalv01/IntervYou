@@ -19,6 +19,7 @@ app.use((req, res, next) => {
 });
 
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/auth', require('./routes/oauth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/sessions', require('./routes/sessions'));
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));

@@ -38,8 +38,17 @@ The client runs on `http://localhost:3000`, the server on `http://localhost:5001
 
 ### Required Accounts
 - **Neon** (neon.tech) — Postgres database, copy the pooled connection string
-- **Vapi** (vapi.ai) — Copy Public Key + Private Key. Add your Groq API key in Vapi Dashboard → Provider Keys
-- **Groq** (console.groq.com) — API key (free tier)
+- **Vapi** (vapi.ai) — Copy Public Key + Private Key. Groq runs through Vapi's default integration, no extra key needed there
+- **Groq** (console.groq.com) — API key (free tier), used by the server for feedback reports
+
+### Optional: Google / GitHub sign-in
+
+Email + password works out of the box. Each social button appears once its keys are in `server/.env`:
+
+- **Google** — [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials → *OAuth client ID* (Web application). Redirect URI: `http://localhost:5001/api/auth/google/callback`
+- **GitHub** — [Developer settings](https://github.com/settings/developers) → *New OAuth App*. Callback URL: `http://localhost:5001/api/auth/github/callback`
+
+In production, set `API_URL` and `CLIENT_URL` in `server/.env` and use your deployed API URL in those callback URLs.
 
 ## Cost Analysis
 
