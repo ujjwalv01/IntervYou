@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 
+// Storage keys keep the old app name so existing logins survive the rename.
 const AUTH_KEY = 'intervu_auth';
 const EVENT = 'intervu-auth'; // same-tab changes (the 'storage' event only fires in other tabs)
 

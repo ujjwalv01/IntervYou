@@ -24,7 +24,7 @@ const FACTS = [
 ];
 
 const FAQS = [
-  ['What is Intervu?', 'A mock interview you have out loud. Aria, the AI interviewer, decides each next question from your previous answers — then you get a structured feedback report.'],
+  ['What is IntervYou?', 'A mock interview you have out loud. Aria, the AI interviewer, decides each next question from your previous answers — then you get a structured feedback report.'],
   ['What do I need?', 'A browser and a microphone. Allow microphone access when you start the interview.'],
   ['How long is an interview?', 'Usually 12–18 minutes. You can end it any time; the report covers whatever you answered.'],
   ['How is the feedback made?', 'After the call, the full transcript is graded by an AI model on communication, structure, depth and confidence. It only uses what you actually said.'],
@@ -241,7 +241,7 @@ export default function LandingPage() {
 
       <footer className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-6 py-8 text-sm text-ink-3">
         <Logo className="text-ink" />
-        <span>© {new Date().getFullYear()} Intervu</span>
+        <span>© {new Date().getFullYear()} IntervYou</span>
       </footer>
     </div>
   );

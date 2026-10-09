@@ -1,5 +1,5 @@
 {
-  "name": "intervu",
+  "name": "intervyou",
   "version": "1.0.0",
   "description": "AI Mock Interview Platform — Voice-first adaptive interviews powered by Vapi + Groq",
   "scripts": {

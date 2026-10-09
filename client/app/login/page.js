@@ -53,7 +53,7 @@ export default function LoginPage() {
         </button>
       </form>
       <p className="mt-6 text-center text-sm text-ink-2">
-        New to Intervu? <Link href="/signup" className="font-medium text-sky-deep hover:underline">Create an account</Link>
+        New to IntervYou? <Link href="/signup" className="font-medium text-sky-deep hover:underline">Create an account</Link>
       </p>
     </AuthShell>
   );

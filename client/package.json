@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@vapi-ai/web": "^2.5.2",
-    "intervu": "file:..",
     "lucide-react": "^1.54.0",
     "next": "16.2.9",
     "react": "19.2.4",

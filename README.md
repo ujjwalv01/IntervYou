@@ -1,6 +1,6 @@
-# Intervu - AI Mock Interview Platform
+# IntervYou - AI Mock Interview Platform
 
-Intervu is a voice-first AI mock interview platform that conducts real, adaptive conversations — not scripted quizzes. The AI interviewer (Aria) listens to your answers, follows up on vague points, pushes back when answers are weak, and acknowledges strong responses before moving on. After each session, you get a structured feedback report with scores, strengths, and areas for improvement.
+IntervYou is a voice-first AI mock interview platform that conducts real, adaptive conversations — not scripted quizzes. The AI interviewer (Aria) listens to your answers, follows up on vague points, pushes back when answers are weak, and acknowledges strong responses before moving on. After each session, you get a structured feedback report with scores, strengths, and areas for improvement.
 
 ## Architecture
 

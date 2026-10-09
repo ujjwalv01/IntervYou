@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Two speech bubbles (Aria + you); sound waves where the voices meet -->
+  <defs>
+    <clipPath id="left"><circle cx="23" cy="30" r="16"/></clipPath>
+  </defs>
+  <g stroke-linejoin="round" stroke-width="2">
+    <path fill="#1683f2" stroke="#1683f2" d="M13.5 41.5 10.5 49.5l8.5-3.7z"/>
+    <path fill="#0b1b2e" stroke="#0b1b2e" d="M50.5 41.5l3 8-8.5-3.7z"/>
+  </g>
+  <circle cx="23" cy="30" r="16" fill="#1683f2"/>
+  <circle cx="41" cy="30" r="16" fill="#0b1b2e"/>
+  <circle cx="41" cy="30" r="16" fill="#0b5fd1" clip-path="url(#left)"/>
+  <g stroke="#fff" stroke-width="1.8" stroke-linecap="round">
+    <path d="M28.8 27.5v5M32 24.5v11M35.2 27.5v5"/>
+  </g>
+</svg>

@@ -94,7 +94,7 @@ router.get('/:provider/callback', async (req, res) => {
     }).then((r) => r.json());
     if (!tokens.access_token) throw new Error(tokens.error_description || tokens.error || 'No access token');
 
-    const profile = await provider.profile({ Authorization: `Bearer ${tokens.access_token}`, 'User-Agent': 'Intervu' });
+    const profile = await provider.profile({ Authorization: `Bearer ${tokens.access_token}`, 'User-Agent': 'IntervYou' });
     if (!profile) return finish(res, { error: `Your ${name} account has no verified email address.` });
 
     // Same email = same account, whether it signed up with a password, Google or GitHub.
