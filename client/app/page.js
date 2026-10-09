@@ -87,13 +87,6 @@ function InterviewPreview() {
             </p>
           ))}
         </div>
-          <p className="text-sm font-medium text-sky-deep">Aria is speaking…</p>
-        </div>
-        <div className="space-y-3 text-sm">
-          <p className="rounded-2xl rounded-tl-sm bg-white/80 p-3"><b className="text-sky-deep">Aria</b> — You said the cache sits in front of the database. What happens when it goes down at peak traffic?</p>
-          <p className="ml-8 rounded-2xl rounded-tr-sm bg-ink p-3 text-white"><b>You</b> — Reads fall through to Postgres, so I&apos;d add a circuit breaker and serve stale data for a few seconds…</p>
-          <p className="rounded-2xl rounded-tl-sm bg-white/80 p-3"><b className="text-sky-deep">Aria</b> — Good — stale-while-revalidate. How stale is too stale for this product?</p>
-        </div>
       </div>
     </div>
   );
