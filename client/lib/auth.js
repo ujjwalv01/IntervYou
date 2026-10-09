@@ -1,16 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 
 const AUTH_KEY = 'intervu_auth';
+const EVENT = 'intervu-auth'; // same-tab changes (the 'storage' event only fires in other tabs)
 
 export function getAuth() {
-  if (typeof window === 'undefined') return null;
   try {
-    const raw = localStorage.getItem(AUTH_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
+    return JSON.parse(localStorage.getItem(AUTH_KEY));
   } catch {
     return null;
   }
@@ -18,21 +16,42 @@ export function getAuth() {
 
 export function setAuth(data) {
   localStorage.setItem(AUTH_KEY, JSON.stringify(data));
+  window.dispatchEvent(new Event(EVENT));
 }
 
 export function clearAuth() {
   localStorage.removeItem(AUTH_KEY);
+  window.dispatchEvent(new Event(EVENT));
 }
 
-export function useAuthGuard() {
-  const router = useRouter();
+function subscribe(callback) {
+  window.addEventListener('storage', callback);
+  window.addEventListener(EVENT, callback);
+  return () => {
+    window.removeEventListener('storage', callback);
+    window.removeEventListener(EVENT, callback);
+  };
+}
 
-  useEffect(() => {
-    const auth = getAuth();
-    if (!auth || !auth.token) {
-      router.replace('/login');
+// Current { token, user } or null. Null during server render, then the stored value.
+export function useAuth() {
+  const raw = useSyncExternalStore(subscribe, () => localStorage.getItem(AUTH_KEY), () => null);
+  return useMemo(() => {
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
     }
-  }, [router]);
+  }, [raw]);
+}
 
-  return getAuth();
+// Redirects when the login state doesn't match the page: 'in' pages need a login, 'out' pages (login/signup) don't.
+export function useAuthRedirect(require = 'in') {
+  const router = useRouter();
+  useEffect(() => {
+    const loggedIn = Boolean(getAuth()?.token);
+    if (require === 'in' && !loggedIn) router.replace('/login');
+    if (require === 'out' && loggedIn) router.replace('/dashboard');
+  }, [require, router]);
+  return useAuth();
 }

@@ -4,7 +4,7 @@
   "description": "AI Mock Interview Platform — Voice-first adaptive interviews powered by Vapi + Groq",
   "scripts": {
     "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
-    "install:all": "npm install --prefix client && npm install --prefix server",
+    "install:all": "npm install && npm install --prefix client && npm install --prefix server",
     "migrate": "npm run migrate --prefix server",
     "build": "npm install --prefix server",
     "start": "npm start --prefix server"

@@ -1,65 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ArrowRight } from 'lucide-react';
+import AppNav from '@/components/AppNav';
 import { post } from '@/lib/api';
-import { getAuth } from '@/lib/auth';
-
-const INTERVIEW_TYPES = [
-  {
-    key: 'behavioral',
-    label: 'Behavioral',
-    icon: '💬',
-    description: 'Communication, STAR structure, self-awareness',
-    gradient: 'linear-gradient(135deg, rgba(192,192,192,0.15), rgba(192,192,192,0.03))',
-    borderColor: 'rgba(192,192,192,0.25)',
-    accentColor: '#c0c0c0',
-  },
-  {
-    key: 'technical',
-    label: 'Technical',
-    icon: '⚡',
-    description: 'Depth of knowledge, problem-solving approach',
-    gradient: 'linear-gradient(135deg, rgba(226,232,240,0.15), rgba(226,232,240,0.03))',
-    borderColor: 'rgba(226,232,240,0.25)',
-    accentColor: '#e2e8f0',
-  },
-  {
-    key: 'system_design',
-    label: 'System Design',
-    icon: '🏗️',
-    description: 'Architecture thinking, tradeoffs, communicating complexity',
-    gradient: 'linear-gradient(135deg, rgba(148,163,184,0.15), rgba(148,163,184,0.03))',
-    borderColor: 'rgba(148,163,184,0.25)',
-    accentColor: '#94a3b8',
-  },
-  {
-    key: 'hr_culture_fit',
-    label: 'HR / Culture Fit',
-    icon: '🤝',
-    description: 'Motivation, values, situational judgment',
-    gradient: 'linear-gradient(135deg, rgba(245,158,11,0.2), rgba(245,158,11,0.05))',
-    borderColor: 'rgba(245,158,11,0.3)',
-    accentColor: '#f59e0b',
-  },
-];
+import { useAuthRedirect } from '@/lib/auth';
+import { INTERVIEW_TYPES } from '@/lib/constants';
 
 export default function NewInterviewPage() {
+  const user = useAuthRedirect('in')?.user;
   const router = useRouter();
   const [loading, setLoading] = useState(null);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    const auth = getAuth();
-    if (!auth || !auth.token) router.replace('/login');
-  }, [router]);
-
-  const handleSelect = async (type) => {
+  const start = async (type) => {
     setError('');
     setLoading(type);
     try {
-      const data = await post('/api/sessions', { interviewType: type });
-      router.push(`/interview/${data.sessionId}`);
+      const { sessionId } = await post('/api/sessions', { interviewType: type });
+      router.push(`/interview/${sessionId}`);
     } catch (err) {
       setError(err.message);
       setLoading(null);
@@ -67,78 +28,34 @@ export default function NewInterviewPage() {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-8 relative overflow-hidden">
-      <div className="orb orb-indigo" style={{ width: 300, height: 300, top: '5%', left: '50%' }} />
-      <div className="orb orb-violet" style={{ width: 200, height: 200, bottom: '10%', left: '10%' }} />
-
-      <div className="max-w-4xl mx-auto relative z-10">
-        {/* Header */}
-        <div className="text-center mb-12 animate-fade-in">
-          <h1 className="text-3xl md:text-4xl font-bold mb-3">
-            Choose your <span className="gradient-text">interview type</span>
-          </h1>
-          <p className="text-base" style={{ color: 'var(--text-secondary)' }}>
-            Select the type of interview you want to practice. Your AI interviewer will adapt accordingly.
+    <>
+      <AppNav />
+      <main className="fade-up mx-auto max-w-4xl px-4 py-12">
+        <p className="eyebrow">New interview</p>
+        <h1 className="mt-3 font-serif text-4xl sm:text-5xl">What do you want to practice?</h1>
+        {user?.role && (
+          <p className="mt-3 text-ink-2">
+            Aria will interview you as a <b className="text-ink">{user.role}</b> ({user.experienceLevel}).{' '}
+            <Link href="/onboarding" className="text-sky-deep hover:underline">Change</Link>
           </p>
-        </div>
-
-        {error && (
-          <div className="error-toast mb-6 max-w-md mx-auto text-center">{error}</div>
         )}
 
-        {/* Cards grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 stagger-children">
-          {INTERVIEW_TYPES.map((type) => (
-            <button
-              key={type.key}
-              onClick={() => handleSelect(type.key)}
-              disabled={loading !== null}
-              className="glass-card glass-card-interactive p-6 text-left group relative overflow-hidden"
-              style={{
-                borderColor: loading === type.key ? type.accentColor : undefined,
-              }}
-            >
-              {/* Gradient background on hover */}
-              <div
-                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{ background: type.gradient }}
-              />
+        {error && <div className="alert mt-6">{error}</div>}
 
-              <div className="relative z-10">
-                <div className="flex items-start justify-between mb-4">
-                  <span className="text-3xl">{type.icon}</span>
-                  {loading === type.key && (
-                    <span className="spinner" style={{ width: 20, height: 20, borderWidth: 2 }} />
-                  )}
-                </div>
-                <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-                  {type.label}
-                </h3>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                  {type.description}
-                </p>
-                <div
-                  className="mt-4 text-xs font-medium flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  style={{ color: type.accentColor }}
-                >
-                  Start interview →
-                </div>
+        <div className="mt-10 grid gap-4 sm:grid-cols-2">
+          {INTERVIEW_TYPES.map(({ key, label, desc, Icon }) => (
+            <button key={key} onClick={() => start(key)} disabled={loading !== null}
+              className="card group cursor-pointer p-6 text-left transition hover:-translate-y-0.5 hover:border-sky/40 hover:shadow-lg disabled:opacity-60">
+              <div className="flex items-start justify-between">
+                <span className="grid size-12 place-items-center rounded-2xl bg-sky-soft text-sky-deep"><Icon size={22} /></span>
+                {loading === key ? <span className="spinner text-sky" /> : <ArrowRight className="text-ink-3 transition group-hover:translate-x-1 group-hover:text-sky" />}
               </div>
+              <h2 className="mt-5 text-lg font-semibold">{label}</h2>
+              <p className="mt-1 text-sm text-ink-2">{desc}</p>
             </button>
           ))}
         </div>
-
-        {/* Back to dashboard */}
-        <div className="text-center mt-8">
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="text-sm font-medium transition-colors"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            ← Back to Dashboard
-          </button>
-        </div>
-      </div>
-    </div>
+      </main>
+    </>
   );
 }

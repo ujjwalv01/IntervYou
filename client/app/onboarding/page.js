@@ -1,154 +1,65 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import AuthShell from '@/components/AuthShell';
 import { patch } from '@/lib/api';
-import { getAuth, setAuth } from '@/lib/auth';
+import { getAuth, setAuth, useAuthRedirect } from '@/lib/auth';
+import { EXPERIENCE_LEVELS } from '@/lib/constants';
 
+// First-time profile setup; also reachable later from the avatar in the nav to edit the profile.
 export default function OnboardingPage() {
+  const user = useAuthRedirect('in')?.user;
   const router = useRouter();
-  const [auth, setAuthState] = useState(null);
-  const [form, setForm] = useState({
-    role: '',
-    experienceLevel: '',
-  });
+  const [form, setForm] = useState(null); // null until edited, so the saved profile shows first
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const a = getAuth();
-    if (!a || !a.token) {
-      router.replace('/login');
-      return;
-    }
-    setAuthState(a);
-  }, [router]);
+  const values = form ?? { role: user?.role || '', experienceLevel: user?.experienceLevel || '' };
+  const update = (field) => (e) => setForm({ ...values, [field]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    if (!form.role.trim()) {
-      setError('Please enter your target job role');
-      return;
-    }
-    if (!form.experienceLevel) {
-      setError('Please select your experience level');
-      return;
-    }
-
     setLoading(true);
     try {
-      const updated = await patch('/api/users/me', form);
-      // Update stored user data
-      const currentAuth = getAuth();
-      setAuth({ ...currentAuth, user: updated });
+      const updated = await patch('/api/users/me', values);
+      setAuth({ ...getAuth(), user: updated });
       router.push('/interview/new');
     } catch (err) {
       setError(err.message);
-    } finally {
       setLoading(false);
     }
   };
 
-  if (!auth) return null;
-
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      <div className="orb orb-indigo" style={{ width: 350, height: 350, top: '10%', right: '10%' }} />
-      <div className="orb orb-cyan" style={{ width: 250, height: 250, bottom: '15%', left: '5%' }} />
-
-      <div className="glass-card p-8 w-full max-w-lg animate-fade-in relative z-10">
-        {/* Step indicator */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
-              style={{ background: 'var(--gradient-main)', color: 'white' }}>
-              ✓
-            </div>
-            <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Account</span>
-          </div>
-          <div className="flex-1 h-px" style={{ background: 'var(--border-glass)' }} />
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold animate-pulse-glow"
-              style={{ background: 'var(--gradient-main)', color: 'white' }}>
-              2
-            </div>
-            <span className="text-xs font-medium" style={{ color: 'var(--accent-indigo)' }}>Profile</span>
-          </div>
-          <div className="flex-1 h-px" style={{ background: 'var(--border-glass)' }} />
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium"
-              style={{ background: 'rgba(192,192,192,0.1)', color: 'var(--text-muted)' }}>
-              3
-            </div>
-            <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Interview</span>
+    <AuthShell
+      title={user?.role ? 'Your profile' : `Nice to meet you${user ? `, ${user.name.split(' ')[0]}` : ''}`}
+      subtitle="Aria tailors every question to the role and level you're aiming for."
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <div className="alert">{error}</div>}
+        <div>
+          <label htmlFor="role" className="label">Target role</label>
+          <input id="role" className="input" required maxLength={120} placeholder="e.g. Frontend Developer, Product Manager"
+            value={values.role} onChange={update('role')} />
+        </div>
+        <div>
+          <span className="label">Experience level</span>
+          <div className="grid grid-cols-3 gap-2">
+            {EXPERIENCE_LEVELS.map((level) => (
+              <label key={level} className={`card cursor-pointer px-2 py-3 text-center text-xs font-medium transition ${
+                values.experienceLevel === level ? 'border-sky! bg-sky-soft text-sky-deep' : 'text-ink-2 hover:border-ink/20'}`}>
+                <input type="radio" name="level" value={level} className="sr-only" required
+                  checked={values.experienceLevel === level} onChange={update('experienceLevel')} />
+                {level}
+              </label>
+            ))}
           </div>
         </div>
-
-        <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-          Set up your profile
-        </h1>
-        <p className="text-sm mb-8" style={{ color: 'var(--text-secondary)' }}>
-          This helps your AI interviewer tailor questions to your level and goals.
-        </p>
-
-        {error && <div className="error-toast mb-4">{error}</div>}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Name (read-only) */}
-          <div>
-            <label className="input-label">Name</label>
-            <input
-              type="text"
-              className="input-field"
-              value={auth.user?.name || ''}
-              disabled
-              style={{ opacity: 0.6 }}
-            />
-          </div>
-
-          {/* Target role */}
-          <div>
-            <label htmlFor="onboarding-role" className="input-label">Target Job Role</label>
-            <input
-              id="onboarding-role"
-              type="text"
-              className="input-field"
-              placeholder="e.g. Frontend Developer, Product Manager, Data Scientist"
-              value={form.role}
-              onChange={(e) => setForm({ ...form, role: e.target.value })}
-              required
-            />
-          </div>
-
-          {/* Experience level */}
-          <div>
-            <label htmlFor="onboarding-experience" className="input-label">Experience Level</label>
-            <select
-              id="onboarding-experience"
-              className="input-field"
-              value={form.experienceLevel}
-              onChange={(e) => setForm({ ...form, experienceLevel: e.target.value })}
-              required
-            >
-              <option value="" disabled>Select your level</option>
-              <option value="Fresher / Intern">Fresher / Intern</option>
-              <option value="1-3 years">1-3 years</option>
-              <option value="3+ years">3+ years</option>
-            </select>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn-primary w-full flex items-center justify-center gap-2"
-          >
-            {loading ? <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} /> : null}
-            {loading ? 'Saving...' : 'Continue to Interview Selection →'}
-          </button>
-        </form>
-      </div>
-    </div>
+        <button type="submit" disabled={loading} className="btn-primary w-full py-3">
+          {loading && <span className="spinner size-4" />} Continue
+        </button>
+      </form>
+    </AuthShell>
   );
 }
