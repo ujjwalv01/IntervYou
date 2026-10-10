@@ -11,6 +11,13 @@ import { useAuthRedirect } from '@/lib/auth';
 import { TYPES_BY_KEY, formatTime } from '@/lib/constants';
 
 
+// Vapi nests API errors a few levels deep ({ error: { message: { message: [...] } } }); dig out the readable part.
+function vapiReason(err) {
+  let m = err?.error ?? err;
+  for (let i = 0; i < 4 && m && typeof m === 'object' && !Array.isArray(m); i++) m = m.message ?? m.error ?? m.errorMsg;
+  return Array.isArray(m) ? m.join(', ') : typeof m === 'string' ? m : '';
+}
+
 export default function InterviewPage() {
   useAuthRedirect('in');
   const router = useRouter();
@@ -30,6 +37,7 @@ export default function InterviewPage() {
   const transcriptEndRef = useRef(null);
   const callPhaseRef = useRef('idle'); // idle | live | ended
   const mountedRef = useRef(true);
+  const configRef = useRef(null); // preloaded assistant config (a promise)
 
   useEffect(() => {
     transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -40,6 +48,13 @@ export default function InterviewPage() {
       .then((data) => (data.status === 'completed' ? router.replace(`/interview/${sessionId}/report`) : setSession(data)))
       .catch((err) => setError(err.message));
   }, [sessionId, router]);
+
+  // Warm up while the intro screen is showing, so "Start" only has to connect the call.
+  useEffect(() => {
+    import('@vapi-ai/web');
+    configRef.current = get(`/api/sessions/${sessionId}/assistant-config`);
+    configRef.current.catch(() => {}); // a failure here is retried on Start
+  }, [sessionId]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -64,11 +79,15 @@ export default function InterviewPage() {
         return;
       }
 
-      const config = await get(`/api/sessions/${sessionId}/assistant-config`);
-      const { default: Vapi } = await import('@vapi-ai/web'); // browser-only SDK
-      vapiRef.current ??= new Vapi(process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY);
-      const vapi = vapiRef.current;
-      vapi.removeAllListeners();
+      const [config, { default: Vapi }] = await Promise.all([
+        configRef.current.catch(() => get(`/api/sessions/${sessionId}/assistant-config`)),
+        import('@vapi-ai/web'), // browser-only SDK, already preloaded
+      ]);
+      // A fresh client per attempt: reusing one after a failed start can leave it stuck.
+      // Detach first so stopping the old one can't trigger our "call ended → generate report" handler.
+      vapiRef.current?.removeAllListeners();
+      try { await vapiRef.current?.stop(); } catch { /* ignore */ }
+      const vapi = (vapiRef.current = new Vapi(process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY));
 
       vapi.on('call-start', () => {
         callPhaseRef.current = 'live';
@@ -106,9 +125,12 @@ export default function InterviewPage() {
       });
 
       vapi.on('error', (err) => {
-        console.error('Vapi error:', err);
+        // Daily reports a normal hang-up from Aria's side as "ejected: Meeting has ended"; call-end handles it.
+        if (err?.error?.error?.type === 'ejected' || err?.error?.errorMsg === 'Meeting has ended') return;
+        console.error('Vapi error:', JSON.stringify(err, null, 2));
         clearInterval(timerRef.current);
-        setError('Voice connection error. Check your microphone and internet, then try again.');
+        const reason = vapiReason(err);
+        setError(`Couldn't connect the voice call${reason ? `: ${reason}` : '. Check your microphone and internet'}. Please try again.`);
         setCallState('error');
       });
 
@@ -193,9 +215,15 @@ export default function InterviewPage() {
             <div className="text-center">
               {type && <span className="inline-grid size-14 place-items-center rounded-2xl bg-sky-soft text-sky-deep"><type.Icon size={26} /></span>}
               <h1 className="mt-5 font-serif text-4xl">{type?.label} interview</h1>
+              {(session.jobTitle || session.usesResume) && (
+                <p className="mt-2 text-sm font-medium text-sky-deep">
+                  Tailored {session.jobTitle ? `for ${session.jobTitle}${session.jobCompany ? ` @ ${session.jobCompany}` : ''}` : 'to your resume'}
+                  {session.jobTitle && session.usesResume && ' and your resume'}
+                </p>
+              )}
               <p className="mx-auto mt-3 max-w-md text-ink-2">
                 Aria will ask one question at a time and follow up on your answers. Find a quiet spot, speak naturally,
-                and end whenever you&apos;re ready — it usually takes 12–18 minutes.
+                and take your time — there&apos;s no time limit. End whenever you&apos;re ready.
               </p>
               {error && <div className="alert mt-6 text-left">{error}</div>}
               <button onClick={startInterview} disabled={callState === 'connecting'} className="btn-primary mt-8 px-8 py-3.5 text-base">

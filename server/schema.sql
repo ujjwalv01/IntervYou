@@ -42,3 +42,11 @@ CREATE INDEX IF NOT EXISTS interview_sessions_user_id_idx ON interview_sessions 
 
 -- Google / GitHub accounts have no password.
 ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
+
+-- Tailored interviews: resume on the user, job description + context snapshot on each session.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS resume_text TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS resume_profile JSONB;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS resume_updated_at TIMESTAMPTZ;
+ALTER TABLE interview_sessions ADD COLUMN IF NOT EXISTS job_description TEXT;
+ALTER TABLE interview_sessions ADD COLUMN IF NOT EXISTS context JSONB;
+ALTER TABLE feedback_reports ADD COLUMN IF NOT EXISTS jd_fit JSONB;

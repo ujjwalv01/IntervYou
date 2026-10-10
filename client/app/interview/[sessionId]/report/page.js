@@ -12,6 +12,12 @@ import { useAuthRedirect } from '@/lib/auth';
 import { TYPES_BY_KEY, formatDate, minutesBetween } from '@/lib/constants';
 
 const CATEGORIES = ['communication', 'structure', 'depth', 'confidence'];
+// How well the interview showed each job requirement: [label, badge colours]
+const FIT = {
+  strong: ['Strong', 'bg-green-50 text-green-700'],
+  partial: ['Partial', 'bg-amber-50 text-amber-700'],
+  missing: ['Missing', 'bg-red-50 text-red-700'],
+};
 
 function List({ title, items, tone }) {
   return (
@@ -94,7 +100,11 @@ export default function ReportPage() {
               <div className="absolute inset-0 bg-gradient-to-r from-ink/60 to-ink/10" />
               <div className="relative flex flex-wrap items-center justify-between gap-6">
                 <div>
-                  <p className="text-sm text-white/80">{[type?.label, formatDate(report.startedAt), minutes && `${minutes} min`].filter(Boolean).join(' · ')}</p>
+                  <p className="text-sm text-white/80">
+                    {[type?.label, report.jobTitle && `${report.jobTitle}${report.jobCompany ? ` @ ${report.jobCompany}` : ''}`, formatDate(report.startedAt), minutes && `${minutes} min`]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </p>
                   <h1 className="mt-2 font-serif text-4xl sm:text-5xl">Interview complete</h1>
                   {report.summary && <p className="mt-3 max-w-lg text-sm leading-relaxed text-white/90">{report.summary}</p>}
                 </div>
@@ -118,6 +128,23 @@ export default function ReportPage() {
               <List title="Strengths" items={report.strengths || []} tone="good" />
               <List title="What to improve" items={report.improvements || []} />
             </div>
+
+            {report.jdFit?.length > 0 && (
+              <div className="card divide-y divide-line">
+                <h2 className="px-6 py-4 text-sm font-semibold">
+                  Job fit {report.jobTitle && <span className="font-normal text-ink-3">· {report.jobTitle}</span>}
+                </h2>
+                {report.jdFit.map((f, i) => (
+                  <div key={i} className="flex gap-4 px-6 py-4 text-sm">
+                    <span className={`h-fit w-20 shrink-0 rounded-full py-1 text-center text-xs font-medium ${FIT[f.status]?.[1]}`}>{FIT[f.status]?.[0]}</span>
+                    <div>
+                      <p className="font-medium">{f.requirement}</p>
+                      <p className="mt-1 text-ink-2">{f.evidence}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {report.questionBreakdown?.length > 0 && (
               <div className="card divide-y divide-line">

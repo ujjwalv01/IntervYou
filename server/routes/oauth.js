@@ -38,16 +38,13 @@ const callbackUrl = (name) => `${process.env.API_URL || `http://localhost:${proc
 // The client lands on /auth/callback; the token stays in the URL fragment, which never reaches any server or log.
 const finish = (res, params) => res.redirect(`${clientUrl()}/auth/callback#${new URLSearchParams(params)}`);
 
-// GET /api/auth/providers — which sign-in buttons the client should show
-router.get('/providers', (req, res) => {
-  res.json(Object.keys(PROVIDERS).filter((name) => clientId(name) && clientSecret(name)));
-});
-
 // GET /api/auth/:provider — start sign-in
 router.get('/:provider', (req, res) => {
   const name = req.params.provider;
   const provider = PROVIDERS[name];
-  if (!provider || !clientId(name)) return res.status(404).json({ error: 'Unknown sign-in provider' });
+  if (!provider) return res.status(404).json({ error: 'Unknown sign-in provider' });
+  // The buttons always show, so a provider without keys (e.g. local dev) explains itself instead of failing.
+  if (!clientId(name) || !clientSecret(name)) return finish(res, { error: 'This sign-in option isn’t set up yet. Use email instead.' });
 
   // Random state in a short-lived cookie stops other sites from completing a login in your browser.
   // The cookie also carries the "remember me" choice (state.1 / state.0) through the round trip.

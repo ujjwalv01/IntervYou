@@ -18,7 +18,7 @@ const STEPS = [
 
 const FACTS = [
   ['4', 'interview types'],
-  ['~15 min', 'per session'],
+  ['No limit', 'you decide when to stop'],
   ['Voice only', 'no typing'],
   ['Adaptive', 'no fixed question list'],
 ];
@@ -26,9 +26,10 @@ const FACTS = [
 const FAQS = [
   ['What is IntervYou?', 'A mock interview you have out loud. Aria, the AI interviewer, decides each next question from your previous answers — then you get a structured feedback report.'],
   ['What do I need?', 'A browser and a microphone. Allow microphone access when you start the interview.'],
-  ['How long is an interview?', 'Usually 12–18 minutes. You can end it any time; the report covers whatever you answered.'],
+  ['How long is an interview?', 'As long as you like. Aria asks whether you want to keep going once the core topics are covered, and pauses a couple of seconds after each answer so you have time to think. The report covers everything you answered.'],
   ['How is the feedback made?', 'After the call, the full transcript is graded by an AI model on communication, structure, depth and confidence. It only uses what you actually said.'],
-  ['Is my data private?', 'Your transcripts and reports are only visible to your account, and you can delete any interview from your dashboard.'],
+  ['Can I practice for a specific job?', 'Yes. Paste the job description and add your resume, and Aria asks about your real projects and the skills that job needs. Your report then shows how well you covered each requirement.'],
+  ['Is my data private?', 'Your transcripts, reports and resume are only visible to your account. Aria only sees a short summary of your resume — never your contact details — and you can remove your resume or delete any interview from your dashboard.'],
 ];
 
 // Different crops for phones (portrait) and larger screens (landscape).

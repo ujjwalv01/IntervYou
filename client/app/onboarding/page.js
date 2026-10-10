@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AuthShell from '@/components/AuthShell';
+import ResumeCard from '@/components/ResumeCard';
 import { patch } from '@/lib/api';
 import { getAuth, setAuth, useAuthRedirect } from '@/lib/auth';
 import { EXPERIENCE_LEVELS } from '@/lib/constants';
@@ -60,6 +61,7 @@ export default function OnboardingPage() {
           {loading && <span className="spinner size-4" />} Continue
         </button>
       </form>
+      <div className="mt-8"><ResumeCard /></div>
     </AuthShell>
   );
 }

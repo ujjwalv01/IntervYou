@@ -1,7 +1,4 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { API_URL, get } from '@/lib/api';
+import { API_URL } from '@/lib/api';
 
 const PROVIDERS = {
   google: {
@@ -25,21 +22,14 @@ const PROVIDERS = {
   },
 };
 
-// "Continue with Google / GitHub" buttons — only for providers the server has keys for.
+// "Continue with Google / GitHub" buttons — rendered instantly, no request needed.
 export default function SocialSignIn({ remember }) {
-  const [enabled, setEnabled] = useState([]);
-
-  useEffect(() => {
-    get('/api/auth/providers').then(setEnabled).catch(() => {});
-  }, []);
-
-  if (!enabled.length) return null;
   return (
     <div className="mb-6">
       <div className="grid gap-2">
-        {enabled.map((name) => (
+        {Object.entries(PROVIDERS).map(([name, { label, icon }]) => (
           <a key={name} href={`${API_URL}/api/auth/${name}${remember ? '?remember=1' : ''}`} className="btn card py-3 text-ink hover:border-ink/20">
-            {PROVIDERS[name]?.icon} Continue with {PROVIDERS[name]?.label || name}
+            {icon} Continue with {label}
           </a>
         ))}
       </div>

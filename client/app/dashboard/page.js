@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ArrowRight, Plus, Trash2 } from 'lucide-react';
 import AppNav from '@/components/AppNav';
+import ResumeCard from '@/components/ResumeCard';
 import { get, post, del } from '@/lib/api';
 import { useAuthRedirect } from '@/lib/auth';
 import { INTERVIEW_TYPES, TYPES_BY_KEY, scoreColor, formatDate, minutesBetween } from '@/lib/constants';
@@ -101,17 +102,20 @@ export default function DashboardPage() {
         {error && <div className="alert mt-6">{error}</div>}
 
         {!sessions ? (
-          <div className="grid h-64 place-items-center text-ink-3"><span className="spinner" /></div>
+          !error && <div className="grid h-64 place-items-center text-ink-3"><span className="spinner" /></div>
         ) : sessions.length === 0 ? (
-          <div className="card mt-8 overflow-hidden">
-            <div className="relative h-56">
-              <Image src="/hero/hero-desktop.webp" alt="" fill sizes="(min-width: 1024px) 1024px, 100vw" className="object-cover object-bottom" />
+          <div className="mt-8 grid gap-4 lg:grid-cols-3">
+            <div className="card overflow-hidden lg:col-span-2">
+              <div className="relative h-56">
+                <Image src="/hero/hero-desktop.webp" alt="" fill sizes="(min-width: 1024px) 768px, 100vw" className="object-cover object-bottom" />
+              </div>
+              <div className="p-8 text-center">
+                <h2 className="font-serif text-3xl">Your first interview is waiting</h2>
+                <p className="mx-auto mt-2 max-w-md text-ink-2">Pick a type, talk to Aria for as long as you like, and get a detailed report right after.</p>
+                <Link href="/interview/new" className="btn-primary mt-6">Start your first interview <ArrowRight size={16} /></Link>
+              </div>
             </div>
-            <div className="p-8 text-center">
-              <h2 className="font-serif text-3xl">Your first interview is waiting</h2>
-              <p className="mx-auto mt-2 max-w-md text-ink-2">Pick a type, talk to Aria for about 15 minutes, and get a detailed report right after.</p>
-              <Link href="/interview/new" className="btn-primary mt-6">Start your first interview <ArrowRight size={16} /></Link>
-            </div>
+            <div><ResumeCard /></div>
           </div>
         ) : (
           <>
@@ -129,16 +133,19 @@ export default function DashboardPage() {
                 <h2 className="mb-4 text-sm font-semibold">Score trend</h2>
                 <ScoreTrend sessions={sessions} />
               </div>
-              <div className="card p-5">
-                <h2 className="mb-3 text-sm font-semibold">Practice next</h2>
-                {INTERVIEW_TYPES.map(({ key, label, Icon }) => (
-                  <button key={key} onClick={() => start(key)} disabled={starting !== null}
-                    className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-2 py-2.5 text-left text-sm hover:bg-ink/5">
-                    <span className="grid size-8 place-items-center rounded-lg bg-sky-soft text-sky-deep"><Icon size={16} /></span>
-                    {label}
-                    {starting === key ? <span className="spinner ml-auto size-4" /> : <ArrowRight size={14} className="ml-auto text-ink-3" />}
-                  </button>
-                ))}
+              <div className="space-y-4">
+                <div className="card p-5">
+                  <h2 className="mb-3 text-sm font-semibold">Practice next</h2>
+                  {INTERVIEW_TYPES.map(({ key, label, Icon }) => (
+                    <button key={key} onClick={() => start(key)} disabled={starting !== null}
+                      className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-2 py-2.5 text-left text-sm hover:bg-ink/5">
+                      <span className="grid size-8 place-items-center rounded-lg bg-sky-soft text-sky-deep"><Icon size={16} /></span>
+                      {label}
+                      {starting === key ? <span className="spinner ml-auto size-4" /> : <ArrowRight size={14} className="ml-auto text-ink-3" />}
+                    </button>
+                  ))}
+                </div>
+                <ResumeCard />
               </div>
             </div>
 
@@ -153,7 +160,10 @@ export default function DashboardPage() {
                     <Link href={done ? `/interview/${s.id}/report` : `/interview/${s.id}`} className="flex min-w-0 flex-1 items-center gap-4">
                       <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-sky-soft text-sky-deep">{type && <type.Icon size={18} />}</span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium">{type?.label || s.interviewType}</span>
+                        <span className="block truncate text-sm font-medium">
+                          {type?.label || s.interviewType}
+                          {s.jobTitle && <span className="font-normal text-ink-2"> · {s.jobTitle}{s.jobCompany && ` @ ${s.jobCompany}`}</span>}
+                        </span>
                         <span className="text-xs text-ink-3">{formatDate(s.startedAt)}{minutes && ` · ${minutes} min`}</span>
                       </span>
                       {s.overallScore != null ? (

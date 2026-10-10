@@ -8,7 +8,8 @@ async function request(method, endpoint, body) {
   try {
     res = await fetch(`${API_URL}${endpoint}`, {
       method,
-      headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }) },
+      // Content-Type only when there's a body: a header-free GET skips the browser's CORS preflight round trip.
+      headers: { ...(body && { 'Content-Type': 'application/json' }), ...(token && { Authorization: `Bearer ${token}` }) },
       body: body && JSON.stringify(body),
     });
   } catch {
@@ -33,4 +34,5 @@ async function request(method, endpoint, body) {
 export const get = (endpoint) => request('GET', endpoint);
 export const post = (endpoint, body) => request('POST', endpoint, body);
 export const patch = (endpoint, body) => request('PATCH', endpoint, body);
+export const put = (endpoint, body) => request('PUT', endpoint, body);
 export const del = (endpoint) => request('DELETE', endpoint);

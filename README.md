@@ -61,11 +61,12 @@ Voice is handled by Vapi with Groq as the LLM. Realistic all-in cost is roughly 
 - **Live transcript** - See the conversation as it happens
 - **Structured feedback** - Overall score, category breakdown, strengths, improvements, question-by-question evaluation
 - **Session history** - Dashboard with all past interviews and scores
+- **Tailored interviews** - Paste a job description and add your resume (PDF or text); Aria asks about your real projects and the job's must-haves, and the report rates how well you covered each requirement
 
 ## Known Limitations / Future Improvements
 
 - **Feedback generation is synchronous** — adds a few seconds of latency after the call ends. If it fails, the report page offers a one-click retry from the saved transcript.
-- **No resume/job-description upload** — the system prompt uses the user's stated role and level, but doesn't incorporate a specific JD or resume for targeted questions.
+- **Scanned PDF resumes** — text is read in the browser, so image-only PDFs need the text pasted instead (no OCR).
 - **Vapi transcript fallback** — if the client-side transcript capture fails, the server reads the transcript from Vapi using the saved call id.
 - **No admin panel** — no way for an evaluator to review interviews or override scores.
 - **Single user type** — no distinction between candidate and recruiter roles.

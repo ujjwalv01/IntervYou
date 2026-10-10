@@ -11,7 +11,8 @@ for (const key of ['DATABASE_URL', 'JWT_SECRET', 'GROQ_API_KEY']) {
 
 const app = express();
 // CLIENT_URL (comma-separated) restricts CORS in production; unset allows any origin.
-app.use(cors({ origin: process.env.CLIENT_URL?.split(',') || true }));
+// maxAge lets browsers reuse a preflight result instead of re-checking before every request.
+app.use(cors({ origin: process.env.CLIENT_URL?.split(',') || true, maxAge: 86400 }));
 app.use(express.json({ limit: '1mb' }));
 app.use((req, res, next) => {
   req.body ??= {};
